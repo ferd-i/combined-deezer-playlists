@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Playlists Deezer combinées</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+      color-scheme: light dark;
+    }
+
+    body {
+      margin: 0;
+      padding: 1.5rem;
+      background: #0f172a;
+      color: #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      background: #020617;
+      border-radius: 16px;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+      padding: 1.5rem 1.75rem 2rem;
+      border: 1px solid rgba(148,163,184,0.3);
+    }
+
+    h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    .subtitle {
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #9ca3af;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .search-wrapper {
+      flex: 1 1 220px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.55rem 0.8rem 0.55rem 2.1rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      background: rgba(15,23,42,0.9);
+      color: #e5e7eb;
+      outline: none;
+      font-size: 0.9rem;
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.7rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(148,163,184,0.7);
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .status {
+      font-size: 0.8rem;
+      color: #9ca3af;
+      margin-bottom: 0.4rem;
+      min-height: 1em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+      font-size: 0.86rem;
+    }
+
+    thead {
+      background: rgba(15,23,42,0.9);
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.45rem 0.4rem;
+    }
+
+    th {
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #9ca3af;
+      border-bottom: 1px solid rgba(55,65,81,0.9);
+    }
+
+    tbody tr:nth-child(odd) {
+      background: rgba(15,23,42,0.75);
+    }
+
+    tbody tr:nth-child(even) {
+      background: rgba(15,23,42,0.4);
+    }
+
+    tbody tr:hover {
+      background: rgba(30,64,175,0.55);
+    }
+
+    .col-title {
+      width: 32%;
+    }
+
+    .col-artist {
+      width: 24%;
+    }
+
+    .col-album {
+      width: 24%;
+    }
+
+    .col-playlists {
+      width: 20%;
+      font-size: 0.78rem;
+      color: #cbd5f5;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 0.8rem 0.4rem;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 720px) {
+      .app {
+        padding: 1.1rem 1rem 1.4rem;
+      }
+
+      th, td {
+        padding: 0.35rem 0.3rem;
+      }
+
+      .col-artist,
+      .col-album {
+        display: none;
+      }
+
+      .col-title {
+        width: 55%;
+      }
+
+      .col-playlists {
+        width: 45%;
+      }
+
+      .badge {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1>Playlists Deezer combinées</h1>
+    <p class="subtitle" id="subtitle">
+      Fusion de deux playlists Deezer, avec indication de celles où se trouve chaque morceau.
+    </p>
+
+    <div class="controls">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input
+          id="search"
+          class="search-input"
+          type="search"
+          placeholder="Rechercher dans les titres, artistes, albums ou playlists…"
+        />
+      </div>
+      <div class="badge" id="summaryBadge">
+        0 morceaux · 0 playlists
+      </div>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-title">Titre</th>
+            <th class="col-artist">Artiste</th>
+            <th class="col-album">Album</th>
+            <th class="col-playlists">Playlists</th>
+          </tr>
+        </thead>
+        <tbody id="tracksBody">
+          <tr><td colspan="4" class="empty">Chargement…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    // ✅ Tes deux playlists publiques
+    const PLAYLIST_IDS = [
+      "14516675863",
+      "14516679663"
+    ];
+
+    // Si tu utilisais un proxy hier, remplace ici:
+    const API_BASE = "https://api.deezer.com";
+
+    const statusEl = document.getElementById("status");
+    const tbody = document.getElementById("tracksBody");
+    const searchInput = document.getElementById("search");
+    const summaryBadge = document.getElementById("summaryBadge");
+    const subtitleEl = document.getElementById("subtitle");
+
+    let allTracks = [];
+
+    function setStatus(msg) {
+      statusEl.textContent = msg || "";
+    }
+
+    async function fetchPlaylistWithTracks(id) {
+      const playlistRes = await fetch(`${API_BASE}/playlist/${id}`);
+      if (!playlistRes.ok) {
+        throw new Error(`Erreur Deezer playlist ${id}: ${playlistRes.status}`);
+      }
+      const playlist = await playlistRes.json();
+
+      const tracksRes = await fetch(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
+      if (!tracksRes.ok) {
+        throw new Error(`Erreur Deezer tracks ${id}: ${tracksRes.status}`);
+      }
+      const tracksData = await tracksRes.json();
+
+      return {
+        id,
+        title: playlist.title || `Playlist ${id}`,
+        tracks: Array.isArray(tracksData.data) ? tracksData.data : []
+      };
+    }
+
+    function mergePlaylists(playlists) {
+      const map = new Map();
+
+      playlists.forEach(pl => {
+        const plLabel = pl.title || `Playlist ${pl.id}`;
+        pl.tracks.forEach(track => {
+          if (!track || !track.id) return;
+          const id = track.id;
+
+          if (!map.has(id)) {
+            map.set(id, {
+              id,
+              title: track.title || "",
+              artist: (track.artist && track.artist.name) || "",
+              album: (track.album && track.album.title) || "",
+              playlists: new Set()
+            });
+          }
+          map.get(id).playlists.add(plLabel);
+        });
+      });
+
+      const merged = Array.from(map.values())
+        .map(t => ({
+          ...t,
+          playlists: Array.from(t.playlists).sort()
+        }))
+        .sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+
+      return merged;
+    }
+
+    function renderTable(tracks) {
+      tbody.innerHTML = "";
+
+      if (!tracks.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = 4;
+        td.className = "empty";
+        td.textContent = "Aucun morceau à afficher.";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
+
+      for (const t of tracks) {
+        const tr = document.createElement("tr");
+
+        const tdTitle = document.createElement("td");
+        tdTitle.className = "col-title";
+        tdTitle.textContent = t.title || "—";
+
+        const tdArtist = document.createElement("td");
+        tdArtist.className = "col-artist";
+        tdArtist.textContent = t.artist || "—";
+
+        const tdAlbum = document.createElement("td");
+        tdAlbum.className = "col-album";
+        tdAlbum.textContent = t.album || "—";
+
+        const tdPlaylists = document.createElement("td");
+        tdPlaylists.className = "col-playlists";
+        tdPlaylists.textContent = t.playlists.join(", ");
+
+        tr.appendChild(tdTitle);
+        tr.appendChild(tdArtist);
+        tr.appendChild(tdAlbum);
+        tr.appendChild(tdPlaylists);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function updateSummary(tracks) {
+      const uniquePlaylists = new Set();
+      tracks.forEach(t => t.playlists.forEach(p => uniquePlaylists.add(p)));
+      summaryBadge.textContent = `${tracks.length} morceaux · ${uniquePlaylists.size} playlists`;
+    }
+
+    function applyFilter() {
+      const q = searchInput.value.trim().toLowerCase();
+      if (!q) {
+        renderTable(allTracks);
+        updateSummary(allTracks);
+        return;
+      }
+
+      const filtered = allTracks.filter(t => {
+        const haystack = [
+          t.title,
+          t.artist,
+          t.album,
+          ...(t.playlists || [])
+        ]
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(q);
+      });
+
+      renderTable(filtered);
+      updateSummary(filtered);
+    }
+
+    async function init() {
+      if (!PLAYLIST_IDS || PLAYLIST_IDS.length !== 2) {
+        setStatus("⚠️ Configure d'abord les deux IDs de playlists dans le code.");
+        return;
+      }
+
+      setStatus("Chargement des playlists Deezer…");
+
+      try {
+        const playlists = await Promise.all(
+          PLAYLIST_IDS.map(id => fetchPlaylistWithTracks(id))
+        );
+
+        // Met à jour le sous-titre avec les noms des playlists
+        const names = playlists.map(p => p.title).filter(Boolean);
+        if (names.length === 2) {
+          subtitleEl.textContent = `Fusion de « ${names[0]} » et « ${names[1]} », avec indication de la présence de chaque morceau.`;
+        }
+
+        allTracks = mergePlaylists(playlists);
+        renderTable(allTracks);
+        updateSummary(allTracks);
+        setStatus("");
+      } catch (err) {
+        console.error(err);
+        setStatus("Erreur lors du chargement des playlists. Regarde la console pour les détails.");
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="empty">
+              Impossible de charger les données Deezer (CORS ou erreur API ?).
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+      searchInput.addEventListener("input", applyFilter);
+    });
+  </script>
+</body>
+</html>
