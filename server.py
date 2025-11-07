@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import requests
 
@@ -24,11 +24,19 @@ def proxy_deezer(endpoint):
         url = f"{DEEZER_API_BASE}/{endpoint}"
         params = request.args.to_dict()
         
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(url, params=params, timeout=120)
         
-        return jsonify(response.json()), response.status_code
+        return Response(
+            response.content,
+            status=response.status_code,
+            headers={'Content-Type': 'application/json'}
+        )
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return Response(
+            f'{{"error": "{str(e)}"}}',
+            status=500,
+            headers={'Content-Type': 'application/json'}
+        )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

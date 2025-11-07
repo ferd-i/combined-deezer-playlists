@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <title>Playlists Deezer combinées</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <style>
     :root {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
@@ -120,6 +123,27 @@
       letter-spacing: 0.06em;
       color: #9ca3af;
       border-bottom: 1px solid rgba(55,65,81,0.9);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    th:hover {
+      color: #e5e7eb;
+    }
+
+    th.sortable::after {
+      content: " ↕";
+      opacity: 0.3;
+    }
+
+    th.sorted-asc::after {
+      content: " ↑";
+      opacity: 1;
+    }
+
+    th.sorted-desc::after {
+      content: " ↓";
+      opacity: 1;
     }
 
     tbody tr:nth-child(odd) {
@@ -134,22 +158,68 @@
       background: rgba(30,64,175,0.55);
     }
 
+    tbody tr.processed {
+      opacity: 0.5;
+    }
+
+    .col-check {
+      width: 3%;
+      text-align: center;
+    }
+
+    .col-check input[type="checkbox"] {
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
     .col-title {
-      width: 32%;
+      width: 29%;
+    }
+
+    .col-title a {
+      color: #e5e7eb;
+      text-decoration: none;
+    }
+
+    .col-title a:hover {
+      color: #60a5fa;
+      text-decoration: underline;
     }
 
     .col-artist {
-      width: 24%;
+      width: 22%;
     }
 
     .col-album {
-      width: 24%;
+      width: 22%;
     }
 
     .col-playlists {
-      width: 20%;
+      width: 24%;
       font-size: 0.78rem;
-      color: #cbd5f5;
+      display: flex;
+      gap: 0.3rem;
+      flex-wrap: wrap;
+    }
+
+    .playlist-pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .playlist-pill.am1 {
+      background-color: #fbbf24;
+      color: #78350f;
+    }
+
+    .playlist-pill.am2 {
+      background-color: #ef4444;
+      color: #fef2f2;
     }
 
     .empty {
@@ -215,14 +285,15 @@
       <table>
         <thead>
           <tr>
-            <th class="col-title">Titre</th>
-            <th class="col-artist">Artiste</th>
-            <th class="col-album">Album</th>
-            <th class="col-playlists">Playlists</th>
+            <th class="col-check">✓</th>
+            <th class="col-title sortable" data-sort="title">Titre</th>
+            <th class="col-artist sortable" data-sort="artist">Artiste</th>
+            <th class="col-album sortable" data-sort="album">Album</th>
+            <th class="col-playlists sortable" data-sort="playlists">Playlists</th>
           </tr>
         </thead>
         <tbody id="tracksBody">
-          <tr><td colspan="4" class="empty">Chargement…</td></tr>
+          <tr><td colspan="5" class="empty">Chargement…</td></tr>
         </tbody>
       </table>
     </div>
@@ -245,6 +316,8 @@
     const subtitleEl = document.getElementById("subtitle");
 
     let allTracks = [];
+    let currentSort = { field: 'title', direction: 'asc' };
+    let processedTracks = new Set(JSON.parse(localStorage.getItem('processedTracks') || '[]'));
 
     function setStatus(msg) {
       statusEl.textContent = msg || "";
@@ -302,13 +375,37 @@
       return merged;
     }
 
+    function toggleProcessed(trackId) {
+      if (processedTracks.has(trackId)) {
+        processedTracks.delete(trackId);
+      } else {
+        processedTracks.add(trackId);
+      }
+      localStorage.setItem('processedTracks', JSON.stringify([...processedTracks]));
+    }
+
+    function sortTracks(tracks, field, direction) {
+      return [...tracks].sort((a, b) => {
+        let aVal = a[field];
+        let bVal = b[field];
+        
+        if (field === 'playlists') {
+          aVal = a.playlists.join(', ');
+          bVal = b.playlists.join(', ');
+        }
+        
+        const comparison = (aVal || '').toString().localeCompare((bVal || '').toString(), 'fr', { sensitivity: 'base' });
+        return direction === 'asc' ? comparison : -comparison;
+      });
+    }
+
     function renderTable(tracks) {
       tbody.innerHTML = "";
 
       if (!tracks.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 4;
+        td.colSpan = 5;
         td.className = "empty";
         td.textContent = "Aucun morceau à afficher.";
         tr.appendChild(td);
@@ -316,12 +413,38 @@
         return;
       }
 
-      for (const t of tracks) {
+      const sortedTracks = sortTracks(tracks, currentSort.field, currentSort.direction);
+
+      for (const t of sortedTracks) {
         const tr = document.createElement("tr");
+        if (processedTracks.has(t.id)) {
+          tr.classList.add("processed");
+        }
+
+        const tdCheck = document.createElement("td");
+        tdCheck.className = "col-check";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = processedTracks.has(t.id);
+        checkbox.addEventListener("change", (e) => {
+          toggleProcessed(t.id);
+          tr.classList.toggle("processed", e.target.checked);
+        });
+        tdCheck.appendChild(checkbox);
 
         const tdTitle = document.createElement("td");
         tdTitle.className = "col-title";
-        tdTitle.textContent = t.title || "—";
+        if (t.id && t.title) {
+          const link = document.createElement("a");
+          link.href = `https://www.deezer.com/track/${t.id}`;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = t.title;
+          link.title = `ID: ${t.id}`;
+          tdTitle.appendChild(link);
+        } else {
+          tdTitle.textContent = t.title || "—";
+        }
 
         const tdArtist = document.createElement("td");
         tdArtist.className = "col-artist";
@@ -333,8 +456,22 @@
 
         const tdPlaylists = document.createElement("td");
         tdPlaylists.className = "col-playlists";
-        tdPlaylists.textContent = t.playlists.join(", ");
+        
+        t.playlists.forEach(playlistName => {
+          const pill = document.createElement("span");
+          pill.className = "playlist-pill";
+          
+          if (playlistName.includes("AM2") || playlistName.includes("AM 2")) {
+            pill.classList.add("am2");
+          } else if (playlistName.includes("AM1") || playlistName.includes("AM 1") || playlistName.includes("AM")) {
+            pill.classList.add("am1");
+          }
+          
+          pill.textContent = playlistName;
+          tdPlaylists.appendChild(pill);
+        });
 
+        tr.appendChild(tdCheck);
         tr.appendChild(tdTitle);
         tr.appendChild(tdArtist);
         tr.appendChild(tdAlbum);
@@ -403,7 +540,7 @@
         setStatus("Erreur lors du chargement des playlists. Regarde la console pour les détails.");
         tbody.innerHTML = `
           <tr>
-            <td colspan="4" class="empty">
+            <td colspan="5" class="empty">
               Impossible de charger les données Deezer (CORS ou erreur API ?).
             </td>
           </tr>
@@ -411,9 +548,34 @@
       }
     }
 
+    function updateSortHeaders() {
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        if (th.dataset.sort === currentSort.field) {
+          th.classList.add(currentSort.direction === 'asc' ? 'sorted-asc' : 'sorted-desc');
+        }
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       init();
       searchInput.addEventListener("input", applyFilter);
+      
+      document.querySelectorAll('th.sortable').forEach(th => {
+        th.addEventListener('click', () => {
+          const field = th.dataset.sort;
+          if (currentSort.field === field) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.field = field;
+            currentSort.direction = 'asc';
+          }
+          updateSortHeaders();
+          applyFilter();
+        });
+      });
+      
+      updateSortHeaders();
     });
   </script>
 </body>
