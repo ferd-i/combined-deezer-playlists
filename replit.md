@@ -43,6 +43,11 @@ The playlists configured in the app (14516675863 and 14516679663) require Deezer
 To find public playlists, visit deezer.com and get the playlist ID from the URL.
 
 ## Recent Changes
+- 2025-11-08: Added Favorite tracks playlist (14515598223) by default to the playlist list
+- 2025-11-08: Implemented heart icons next to track titles:
+  - Red filled heart (♥︎) when track is in both Library AM1/AM2 AND Favorite tracks
+  - Gray empty heart (♡) when track is in Library AM1/AM2 but NOT in Favorite tracks
+  - No heart when track is only in Favorite tracks (not in AM libraries)
 - 2025-11-07: Initial import from GitHub
 - 2025-11-07: Set up Flask proxy server to handle CORS issues with Deezer API
 - 2025-11-07: Configured workflow for port 5000 with cache control headers

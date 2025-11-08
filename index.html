@@ -508,7 +508,8 @@
     // Configuration initiale
     const DEFAULT_PLAYLIST_IDS = [
       "14516675863",
-      "14516679663"
+      "14516679663",
+      "14515598223"
     ];
 
     let PLAYLIST_IDS = JSON.parse(localStorage.getItem('playlistIds') || JSON.stringify(DEFAULT_PLAYLIST_IDS));
@@ -686,6 +687,20 @@
 
         const tdTitle = document.createElement("td");
         tdTitle.className = "col-title";
+        
+        // Déterminer si le morceau est dans Favorite tracks
+        const isInFavorites = t.playlists.some(p => p.toLowerCase().includes("favorite"));
+        const isInLibrary = t.playlists.some(p => p.includes("AM1") || p.includes("AM 1") || p.includes("AM2") || p.includes("AM 2") || p.includes("AM"));
+        
+        // Ajouter le cœur approprié
+        if (isInLibrary) {
+          const heart = document.createElement("span");
+          heart.textContent = isInFavorites ? "♥︎ " : "♡ ";
+          heart.style.marginRight = "4px";
+          heart.style.color = isInFavorites ? "#e74c3c" : "#95a5a6";
+          tdTitle.appendChild(heart);
+        }
+        
         if (t.id && t.title) {
           const link = document.createElement("a");
           link.href = `https://www.deezer.com/track/${t.id}`;
@@ -695,7 +710,8 @@
           link.title = `ID: ${t.id}`;
           tdTitle.appendChild(link);
         } else {
-          tdTitle.textContent = t.title || "—";
+          const titleText = document.createTextNode(t.title || "—");
+          tdTitle.appendChild(titleText);
         }
 
         const tdArtist = document.createElement("td");
