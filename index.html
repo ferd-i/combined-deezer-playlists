@@ -237,6 +237,14 @@
       font-size: 0.7rem;
       font-weight: 500;
       white-space: nowrap;
+      text-decoration: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .playlist-pill:hover {
+      opacity: 0.8;
+      text-decoration: underline;
     }
 
     .playlist-pill.am1 {
@@ -346,22 +354,37 @@
     let allTracks = [];
     let currentSort = { field: 'title', direction: 'asc' };
     let processedTracks = new Set(JSON.parse(localStorage.getItem('processedTracks') || '[]'));
+    let playlistMap = new Map();
+    let searchDebounceTimer = null;
 
     function setStatus(msg) {
       statusEl.textContent = msg || "";
     }
 
-    async function fetchPlaylistWithTracks(id) {
-      const playlistRes = await fetch(`${API_BASE}/playlist/${id}`);
-      if (!playlistRes.ok) {
-        throw new Error(`Erreur Deezer playlist ${id}: ${playlistRes.status}`);
+    async function fetchWithRetry(url, retries = 3, delay = 1000) {
+      for (let i = 0; i < retries; i++) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) return response;
+          if (response.status === 504 && i < retries - 1) {
+            setStatus(`⏳ Timeout, nouvelle tentative ${i + 1}/${retries - 1}...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        } catch (err) {
+          if (i === retries - 1) throw err;
+          setStatus(`⏳ Erreur réseau, nouvelle tentative ${i + 1}/${retries - 1}...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
+    }
+
+    async function fetchPlaylistWithTracks(id) {
+      const playlistRes = await fetchWithRetry(`${API_BASE}/playlist/${id}`);
       const playlist = await playlistRes.json();
 
-      const tracksRes = await fetch(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
-      if (!tracksRes.ok) {
-        throw new Error(`Erreur Deezer tracks ${id}: ${tracksRes.status}`);
-      }
+      const tracksRes = await fetchWithRetry(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
       const tracksData = await tracksRes.json();
 
       return {
@@ -376,6 +399,8 @@
 
       playlists.forEach(pl => {
         const plLabel = pl.title || `Playlist ${pl.id}`;
+        playlistMap.set(plLabel, pl.id);
+        
         pl.tracks.forEach(track => {
           if (!track || !track.id) return;
           const id = track.id;
@@ -487,8 +512,13 @@
         tdPlaylists.className = "col-playlists";
         
         t.playlists.forEach(playlistName => {
-          const pill = document.createElement("span");
+          const playlistId = playlistMap.get(playlistName);
+          const pill = document.createElement("a");
           pill.className = "playlist-pill";
+          pill.href = `https://www.deezer.com/playlist/${playlistId}`;
+          pill.target = "_blank";
+          pill.rel = "noopener noreferrer";
+          pill.title = `Voir sur Deezer: ${playlistName}`;
           
           if (playlistName.includes("AM2") || playlistName.includes("AM 2")) {
             pill.classList.add("am2");
@@ -554,6 +584,13 @@
       updateSummary(filtered);
     }
 
+    function debouncedApplyFilter() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        applyFilter();
+      }, 200);
+    }
+
     async function init() {
       if (!PLAYLIST_IDS || PLAYLIST_IDS.length !== 2) {
         setStatus("⚠️ Configure d'abord les deux IDs de playlists dans le code.");
@@ -617,7 +654,7 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       init();
-      searchInput.addEventListener("input", applyFilter);
+      searchInput.addEventListener("input", debouncedApplyFilter);
       
       document.addEventListener("keydown", (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "k") {

@@ -54,3 +54,6 @@ To find public playlists, visit deezer.com and get the playlist ID from the URL.
 - 2025-11-08: Made search bar sticky for easier access while scrolling
 - 2025-11-08: Added keyboard shortcut (Cmd+K / Ctrl+K) to focus search bar
 - 2025-11-08: Added "Voir dans la liste" button in search results to navigate back to track position
+- 2025-11-08: Made playlist pills clickable to open playlists on Deezer
+- 2025-11-08: Added automatic retry logic (3 attempts) for failed API requests to reduce CORS/timeout errors
+- 2025-11-08: Added debouncing (200ms) to search input for smoother performance with large playlists
