@@ -578,10 +578,17 @@
       const tracksRes = await fetchWithRetry(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
       const tracksData = await tracksRes.json();
 
+      const tracks = Array.isArray(tracksData.data) ? tracksData.data : [];
+      
       return {
         id,
         title: playlist.title || `Playlist ${id}`,
-        tracks: Array.isArray(tracksData.data) ? tracksData.data : []
+        tracks: tracks.map(t => ({
+          id: t.id,
+          title: t.title,
+          artist: t.artist,
+          album: t.album
+        }))
       };
     }
 
@@ -746,13 +753,31 @@
     }
 
     function saveCache(playlists) {
-      const cache = {
-        timestamp: Date.now(),
-        playlistIds: PLAYLIST_IDS,
-        playlists: playlists
-      };
-      localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
-      updateCacheInfo();
+      try {
+        const compactPlaylists = playlists.map(pl => ({
+          id: pl.id,
+          title: pl.title,
+          tracks: pl.tracks.map(t => ({
+            id: t.id,
+            title: t.title,
+            artist: t.artist?.name || t.artist || "",
+            album: t.album?.title || t.album || ""
+          }))
+        }));
+        
+        const cache = {
+          timestamp: Date.now(),
+          playlistIds: PLAYLIST_IDS,
+          playlists: compactPlaylists
+        };
+        
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        updateCacheInfo();
+      } catch (err) {
+        console.warn('Impossible de sauvegarder le cache (quota dépassé):', err);
+        localStorage.removeItem(CACHE_KEY);
+        cacheInfoEl.textContent = '⚠️ Cache désactivé (données trop volumineuses)';
+      }
     }
 
     function loadCache() {
