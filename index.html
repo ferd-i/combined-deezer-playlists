@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
   <meta charset="utf-8" />
   <title>Playlists Deezer combinées</title>
@@ -29,9 +30,9 @@
       max-width: 1100px;
       background: #020617;
       border-radius: 16px;
-      box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+      box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
       padding: 1.5rem 1.75rem 2rem;
-      border: 1px solid rgba(148,163,184,0.3);
+      border: 1px solid rgba(148, 163, 184, 0.3);
     }
 
     h1 {
@@ -58,7 +59,7 @@
       background: #0f172a;
       padding: 1rem 0;
       z-index: 100;
-      border-bottom: 1px solid rgba(55,65,81,0.5);
+      border-bottom: 1px solid rgba(55, 65, 81, 0.5);
     }
 
     .search-wrapper {
@@ -70,8 +71,8 @@
       width: 100%;
       padding: 0.55rem 0.8rem 0.55rem 2.1rem;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
-      background: rgba(15,23,42,0.9);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: rgba(15, 23, 42, 0.9);
       color: #e5e7eb;
       outline: none;
       font-size: 0.9rem;
@@ -94,7 +95,7 @@
       font-size: 0.75rem;
       padding: 0.2rem 0.6rem;
       border-radius: 999px;
-      border: 1px solid rgba(148,163,184,0.7);
+      border: 1px solid rgba(148, 163, 184, 0.7);
       color: #9ca3af;
       white-space: nowrap;
     }
@@ -114,10 +115,11 @@
     }
 
     thead {
-      background: rgba(15,23,42,0.9);
+      background: rgba(15, 23, 42, 0.9);
     }
 
-    th, td {
+    th,
+    td {
       text-align: left;
       padding: 0.45rem 0.4rem;
     }
@@ -128,7 +130,7 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: #9ca3af;
-      border-bottom: 1px solid rgba(55,65,81,0.9);
+      border-bottom: 1px solid rgba(55, 65, 81, 0.9);
       cursor: pointer;
       user-select: none;
     }
@@ -153,15 +155,15 @@
     }
 
     tbody tr:nth-child(odd) {
-      background: rgba(15,23,42,0.75);
+      background: rgba(15, 23, 42, 0.75);
     }
 
     tbody tr:nth-child(even) {
-      background: rgba(15,23,42,0.4);
+      background: rgba(15, 23, 42, 0.4);
     }
 
     tbody tr:hover {
-      background: rgba(30,64,175,0.55);
+      background: rgba(30, 64, 175, 0.55);
     }
 
     tbody tr.processed {
@@ -215,8 +217,8 @@
     }
 
     .btn-locate {
-      background: rgba(59,130,246,0.2);
-      border: 1px solid rgba(59,130,246,0.5);
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.5);
       color: #60a5fa;
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
@@ -226,8 +228,8 @@
     }
 
     .btn-locate:hover {
-      background: rgba(59,130,246,0.3);
-      border-color: rgba(59,130,246,0.7);
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.7);
     }
 
     .playlist-pill {
@@ -237,14 +239,6 @@
       font-size: 0.7rem;
       font-weight: 500;
       white-space: nowrap;
-      text-decoration: none;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-
-    .playlist-pill:hover {
-      opacity: 0.8;
-      text-decoration: underline;
     }
 
     .playlist-pill.am1 {
@@ -269,7 +263,8 @@
         padding: 1.1rem 1rem 1.4rem;
       }
 
-      th, td {
+      th,
+      td {
         padding: 0.35rem 0.3rem;
       }
 
@@ -292,6 +287,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="app">
     <h1>Playlists Deezer combinées</h1>
@@ -302,12 +298,8 @@
     <div class="controls">
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
-        <input
-          id="search"
-          class="search-input"
-          type="search"
-          placeholder="Rechercher dans les titres, artistes, albums ou playlists…"
-        />
+        <input id="search" class="search-input" type="search"
+          placeholder="Rechercher dans les titres, artistes, albums ou playlists…" />
       </div>
       <div class="badge" id="summaryBadge">
         0 morceaux · 0 playlists
@@ -329,7 +321,9 @@
           </tr>
         </thead>
         <tbody id="tracksBody">
-          <tr><td colspan="6" class="empty">Chargement…</td></tr>
+          <tr>
+            <td colspan="6" class="empty">Chargement…</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -352,40 +346,40 @@
     const subtitleEl = document.getElementById("subtitle");
 
     let allTracks = [];
-    let currentSort = { field: 'title', direction: 'asc' };
+    let currentSort = {field: 'title', direction: 'asc'};
     let processedTracks = new Set(JSON.parse(localStorage.getItem('processedTracks') || '[]'));
-    let playlistMap = new Map();
-    let searchDebounceTimer = null;
+
+    const FETCH_TIMEOUT_MS = 25000;
 
     function setStatus(msg) {
       statusEl.textContent = msg || "";
     }
 
-    async function fetchWithRetry(url, retries = 3, delay = 1000) {
-      for (let i = 0; i < retries; i++) {
-        try {
-          const response = await fetch(url);
-          if (response.ok) return response;
-          if (response.status === 504 && i < retries - 1) {
-            setStatus(`⏳ Timeout, nouvelle tentative ${i + 1}/${retries - 1}...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-          throw new Error(`HTTP ${response.status}`);
-        } catch (err) {
-          if (i === retries - 1) throw err;
-          setStatus(`⏳ Erreur réseau, nouvelle tentative ${i + 1}/${retries - 1}...`);
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-      }
+    function fetchWithTimeout(resource, options = {}, timeout = FETCH_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+
+      return fetch(resource, {...options, signal: controller.signal})
+        .finally(() => clearTimeout(timer));
     }
 
     async function fetchPlaylistWithTracks(id) {
-      const playlistRes = await fetchWithRetry(`${API_BASE}/playlist/${id}`);
-      const playlist = await playlistRes.json();
+      const playlistPromise = fetchWithTimeout(`${API_BASE}/playlist/${id}`);
+      const tracksPromise = fetchWithTimeout(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
 
-      const tracksRes = await fetchWithRetry(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
-      const tracksData = await tracksRes.json();
+      const [playlistRes, tracksRes] = await Promise.all([playlistPromise, tracksPromise]);
+
+      if (!playlistRes.ok) {
+        throw new Error(`Erreur Deezer playlist ${id}: ${playlistRes.status}`);
+      }
+      if (!tracksRes.ok) {
+        throw new Error(`Erreur Deezer tracks ${id}: ${tracksRes.status}`);
+      }
+
+      const [playlist, tracksData] = await Promise.all([
+        playlistRes.json(),
+        tracksRes.json()
+      ]);
 
       return {
         id,
@@ -399,8 +393,6 @@
 
       playlists.forEach(pl => {
         const plLabel = pl.title || `Playlist ${pl.id}`;
-        playlistMap.set(plLabel, pl.id);
-        
         pl.tracks.forEach(track => {
           if (!track || !track.id) return;
           const id = track.id;
@@ -423,7 +415,7 @@
           ...t,
           playlists: Array.from(t.playlists).sort()
         }))
-        .sort((a, b) => a.title.localeCompare(b.title, "fr", { sensitivity: "base" }));
+        .sort((a, b) => a.title.localeCompare(b.title, "fr", {sensitivity: "base"}));
 
       return merged;
     }
@@ -441,13 +433,13 @@
       return [...tracks].sort((a, b) => {
         let aVal = a[field];
         let bVal = b[field];
-        
+
         if (field === 'playlists') {
           aVal = a.playlists.join(', ');
           bVal = b.playlists.join(', ');
         }
-        
-        const comparison = (aVal || '').toString().localeCompare((bVal || '').toString(), 'fr', { sensitivity: 'base' });
+
+        const comparison = (aVal || '').toString().localeCompare((bVal || '').toString(), 'fr', {sensitivity: 'base'});
         return direction === 'asc' ? comparison : -comparison;
       });
     }
@@ -510,29 +502,24 @@
 
         const tdPlaylists = document.createElement("td");
         tdPlaylists.className = "col-playlists";
-        
+
         t.playlists.forEach(playlistName => {
-          const playlistId = playlistMap.get(playlistName);
-          const pill = document.createElement("a");
+          const pill = document.createElement("span");
           pill.className = "playlist-pill";
-          pill.href = `https://www.deezer.com/playlist/${playlistId}`;
-          pill.target = "_blank";
-          pill.rel = "noopener noreferrer";
-          pill.title = `Voir sur Deezer: ${playlistName}`;
-          
+
           if (playlistName.includes("AM2") || playlistName.includes("AM 2")) {
             pill.classList.add("am2");
           } else if (playlistName.includes("AM1") || playlistName.includes("AM 1") || playlistName.includes("AM")) {
             pill.classList.add("am1");
           }
-          
+
           pill.textContent = playlistName;
           tdPlaylists.appendChild(pill);
         });
 
         const tdActions = document.createElement("td");
         tdActions.className = "col-actions";
-        
+
         if (searchInput.value.trim()) {
           const btnLocate = document.createElement("button");
           btnLocate.className = "btn-locate";
@@ -584,19 +571,13 @@
       updateSummary(filtered);
     }
 
-    function debouncedApplyFilter() {
-      clearTimeout(searchDebounceTimer);
-      searchDebounceTimer = setTimeout(() => {
-        applyFilter();
-      }, 200);
-    }
-
     async function init() {
       if (!PLAYLIST_IDS || PLAYLIST_IDS.length !== 2) {
         setStatus("⚠️ Configure d'abord les deux IDs de playlists dans le code.");
         return;
       }
 
+      const startedAt = performance.now();
       setStatus("Chargement des playlists Deezer…");
 
       try {
@@ -613,7 +594,9 @@
         allTracks = mergePlaylists(playlists);
         renderTable(allTracks);
         updateSummary(allTracks);
-        setStatus("");
+        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+        setStatus(`Chargement terminé en ${elapsed}s`);
+        setTimeout(() => setStatus(""), 4000);
       } catch (err) {
         console.error(err);
         setStatus("Erreur lors du chargement des playlists. Regarde la console pour les détails.");
@@ -639,11 +622,11 @@
     function locateInFullList(trackId) {
       searchInput.value = "";
       applyFilter();
-      
+
       setTimeout(() => {
         const targetRow = tbody.querySelector(`tr[data-track-id="${trackId}"]`);
         if (targetRow) {
-          targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetRow.scrollIntoView({behavior: 'smooth', block: 'center'});
           targetRow.style.backgroundColor = 'rgba(59,130,246,0.4)';
           setTimeout(() => {
             targetRow.style.backgroundColor = '';
@@ -654,8 +637,8 @@
 
     document.addEventListener("DOMContentLoaded", () => {
       init();
-      searchInput.addEventListener("input", debouncedApplyFilter);
-      
+      searchInput.addEventListener("input", applyFilter);
+
       document.addEventListener("keydown", (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key === "k") {
           e.preventDefault();
@@ -663,7 +646,7 @@
           searchInput.select();
         }
       });
-      
+
       document.querySelectorAll('th.sortable').forEach(th => {
         th.addEventListener('click', () => {
           const field = th.dataset.sort;
@@ -677,9 +660,10 @@
           applyFilter();
         });
       });
-      
+
       updateSortHeaders();
     });
   </script>
 </body>
+
 </html>
