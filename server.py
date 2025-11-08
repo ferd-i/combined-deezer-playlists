@@ -17,8 +17,11 @@ _cache: Dict[Tuple[str, Tuple[Tuple[str, str], ...]], Dict[str, object]] = {}
 _session = requests.Session()
 
 
-def _cache_key(endpoint: str, params: Dict[str, str]) -> Tuple[str, Tuple[Tuple[str, str], ...]]:
+def _cache_key(
+        endpoint: str,
+        params: Dict[str, str]) -> Tuple[str, Tuple[Tuple[str, str], ...]]:
     return (endpoint, tuple(sorted(params.items())))
+
 
 @app.route('/')
 def index():
@@ -27,6 +30,7 @@ def index():
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
     return response
+
 
 @app.route('/api/deezer/<path:endpoint>')
 def proxy_deezer(endpoint):
@@ -39,7 +43,9 @@ def proxy_deezer(endpoint):
         cached = _cache.get(key)
         if cached and now - cached["ts"] < CACHE_TTL_SECONDS:
             headers = {'Content-Type': 'application/json', 'X-Cache': 'HIT'}
-            return Response(cached["content"], status=cached["status"], headers=headers)
+            return Response(cached["content"],
+                            status=cached["status"],
+                            headers=headers)
 
         response = _session.get(url, params=params, timeout=30)
 
@@ -50,17 +56,17 @@ def proxy_deezer(endpoint):
             "ts": now
         }
 
-        return Response(
-            payload,
-            status=response.status_code,
-            headers={'Content-Type': 'application/json', 'X-Cache': 'MISS'}
-        )
+        return Response(payload,
+                        status=response.status_code,
+                        headers={
+                            'Content-Type': 'application/json',
+                            'X-Cache': 'MISS'
+                        })
     except Exception as e:
-        return Response(
-            f'{{"error": "{str(e)}"}}',
-            status=500,
-            headers={'Content-Type': 'application/json'}
-        )
+        return Response(f'{{"error": "{str(e)}"}}',
+                        status=500,
+                        headers={'Content-Type': 'application/json'})
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
