@@ -57,3 +57,7 @@ To find public playlists, visit deezer.com and get the playlist ID from the URL.
 - 2025-11-08: Made playlist pills clickable to open playlists on Deezer
 - 2025-11-08: Added automatic retry logic (3 attempts) for failed API requests to reduce CORS/timeout errors
 - 2025-11-08: Added debouncing (200ms) to search input for smoother performance with large playlists
+- 2025-11-08: Implemented localStorage cache system (24h duration) to save playlist data and avoid repeated API calls
+- 2025-11-08: Added "Actualiser" button to manually force refresh from API
+- 2025-11-08: Added "Playlists" button with modal interface to manage source playlists (add/remove)
+- 2025-11-08: Made playlist IDs configurable and persistent in localStorage
