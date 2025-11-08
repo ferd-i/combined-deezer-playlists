@@ -403,6 +403,19 @@
       color: #fef2f2;
     }
 
+    .playlist-pill.favorite {
+      background-color: #f97316;
+      color: #fff7ed;
+    }
+
+    tr.favorite-only {
+      background-color: rgba(249, 115, 22, 0.1);
+    }
+
+    tr.favorite-only:hover {
+      background-color: rgba(249, 115, 22, 0.2);
+    }
+
     .empty {
       text-align: center;
       padding: 0.8rem 0.4rem;
@@ -608,8 +621,8 @@
             map.set(id, {
               id,
               title: track.title || "",
-              artist: (track.artist && track.artist.name) || "",
-              album: (track.album && track.album.title) || "",
+              artist: (typeof track.artist === 'string' ? track.artist : track.artist?.name) || "",
+              album: (typeof track.album === 'string' ? track.album : track.album?.title) || "",
               playlists: new Set()
             });
           }
@@ -673,6 +686,12 @@
         if (processedTracks.has(t.id)) {
           tr.classList.add("processed");
         }
+        
+        // Colorer en orange les morceaux uniquement dans Favorites
+        const isOnlyInFavorites = t.playlists.length === 1 && t.playlists.some(p => p.toLowerCase().includes("favorite"));
+        if (isOnlyInFavorites) {
+          tr.classList.add("favorite-only");
+        }
 
         const tdCheck = document.createElement("td");
         tdCheck.className = "col-check";
@@ -692,13 +711,18 @@
         const isInFavorites = t.playlists.some(p => p.toLowerCase().includes("favorite"));
         const isInLibrary = t.playlists.some(p => p.includes("AM1") || p.includes("AM 1") || p.includes("AM2") || p.includes("AM 2") || p.includes("AM"));
         
-        // Ajouter le cœur approprié
-        if (isInLibrary) {
-          const heart = document.createElement("span");
-          heart.textContent = isInFavorites ? "♥︎ " : "♡ ";
-          heart.style.marginRight = "4px";
-          heart.style.color = isInFavorites ? "#e74c3c" : "#95a5a6";
-          tdTitle.appendChild(heart);
+        // Ajouter le cœur approprié avec lien
+        if (isInLibrary && t.id) {
+          const heartLink = document.createElement("a");
+          heartLink.href = `https://www.deezer.com/track/${t.id}`;
+          heartLink.target = "_blank";
+          heartLink.rel = "noopener noreferrer";
+          heartLink.textContent = isInFavorites ? "♥︎ " : "♡ ";
+          heartLink.style.marginRight = "4px";
+          heartLink.style.color = isInFavorites ? "#e74c3c" : "#95a5a6";
+          heartLink.style.textDecoration = "none";
+          heartLink.title = `ID: ${t.id}`;
+          tdTitle.appendChild(heartLink);
         }
         
         if (t.id && t.title) {
@@ -728,14 +752,33 @@
         t.playlists.forEach(playlistName => {
           const pill = document.createElement("span");
           pill.className = "playlist-pill";
-
-          if (playlistName.includes("AM2") || playlistName.includes("AM 2")) {
+          
+          let shortName = playlistName;
+          if (playlistName.toLowerCase().includes("favorite")) {
+            shortName = "F";
+            pill.classList.add("favorite");
+          } else if (playlistName.includes("AM2") || playlistName.includes("AM 2")) {
+            shortName = "AM2";
             pill.classList.add("am2");
           } else if (playlistName.includes("AM1") || playlistName.includes("AM 1") || playlistName.includes("AM")) {
+            shortName = "AM1";
             pill.classList.add("am1");
           }
 
-          pill.textContent = playlistName;
+          const playlistId = playlistMap.get(playlistName);
+          if (playlistId) {
+            const link = document.createElement("a");
+            link.href = `https://www.deezer.com/playlist/${playlistId}`;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.textContent = shortName;
+            link.style.color = "inherit";
+            link.style.textDecoration = "none";
+            pill.appendChild(link);
+          } else {
+            pill.textContent = shortName;
+          }
+          
           tdPlaylists.appendChild(pill);
         });
 

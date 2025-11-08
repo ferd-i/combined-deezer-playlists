@@ -43,6 +43,10 @@ The playlists configured in the app (14516675863 and 14516679663) require Deezer
 To find public playlists, visit deezer.com and get the playlist ID from the URL.
 
 ## Recent Changes
+- 2025-11-08: Made heart icons clickable links to Deezer tracks
+- 2025-11-08: Shortened playlist names (AM1, AM2, F for Favorite) with orange pill color for F
+- 2025-11-08: Added orange background highlight for tracks that are only in Favorites (not in AM libraries)
+- 2025-11-08: Fixed artist and album names display (added compatibility for both string and object formats from cache/API)
 - 2025-11-08: Added Favorite tracks playlist (14515598223) by default to the playlist list
 - 2025-11-08: Implemented heart icons next to track titles:
   - Red filled heart (♥︎) when track is in both Library AM1/AM2 AND Favorite tracks
