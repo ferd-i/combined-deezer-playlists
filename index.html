@@ -53,6 +53,12 @@
       margin-bottom: 1rem;
       align-items: center;
       justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      padding: 1rem 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(55,65,81,0.5);
     }
 
     .search-wrapper {
@@ -203,6 +209,27 @@
       flex-wrap: wrap;
     }
 
+    .col-actions {
+      width: 8%;
+      text-align: center;
+    }
+
+    .btn-locate {
+      background: rgba(59,130,246,0.2);
+      border: 1px solid rgba(59,130,246,0.5);
+      color: #60a5fa;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-locate:hover {
+      background: rgba(59,130,246,0.3);
+      border-color: rgba(59,130,246,0.7);
+    }
+
     .playlist-pill {
       display: inline-block;
       padding: 0.15rem 0.5rem;
@@ -290,10 +317,11 @@
             <th class="col-artist sortable" data-sort="artist">Artiste</th>
             <th class="col-album sortable" data-sort="album">Album</th>
             <th class="col-playlists sortable" data-sort="playlists">Playlists</th>
+            <th class="col-actions"></th>
           </tr>
         </thead>
         <tbody id="tracksBody">
-          <tr><td colspan="5" class="empty">Chargement…</td></tr>
+          <tr><td colspan="6" class="empty">Chargement…</td></tr>
         </tbody>
       </table>
     </div>
@@ -405,7 +433,7 @@
       if (!tracks.length) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = 5;
+        td.colSpan = 6;
         td.className = "empty";
         td.textContent = "Aucun morceau à afficher.";
         tr.appendChild(td);
@@ -417,6 +445,7 @@
 
       for (const t of sortedTracks) {
         const tr = document.createElement("tr");
+        tr.dataset.trackId = t.id;
         if (processedTracks.has(t.id)) {
           tr.classList.add("processed");
         }
@@ -471,11 +500,24 @@
           tdPlaylists.appendChild(pill);
         });
 
+        const tdActions = document.createElement("td");
+        tdActions.className = "col-actions";
+        
+        if (searchInput.value.trim()) {
+          const btnLocate = document.createElement("button");
+          btnLocate.className = "btn-locate";
+          btnLocate.textContent = "↗ Liste";
+          btnLocate.title = "Voir dans la liste complète";
+          btnLocate.addEventListener("click", () => locateInFullList(t.id));
+          tdActions.appendChild(btnLocate);
+        }
+
         tr.appendChild(tdCheck);
         tr.appendChild(tdTitle);
         tr.appendChild(tdArtist);
         tr.appendChild(tdAlbum);
         tr.appendChild(tdPlaylists);
+        tr.appendChild(tdActions);
 
         tbody.appendChild(tr);
       }
@@ -540,7 +582,7 @@
         setStatus("Erreur lors du chargement des playlists. Regarde la console pour les détails.");
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="empty">
+            <td colspan="6" class="empty">
               Impossible de charger les données Deezer (CORS ou erreur API ?).
             </td>
           </tr>
@@ -557,9 +599,33 @@
       });
     }
 
+    function locateInFullList(trackId) {
+      searchInput.value = "";
+      applyFilter();
+      
+      setTimeout(() => {
+        const targetRow = tbody.querySelector(`tr[data-track-id="${trackId}"]`);
+        if (targetRow) {
+          targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetRow.style.backgroundColor = 'rgba(59,130,246,0.4)';
+          setTimeout(() => {
+            targetRow.style.backgroundColor = '';
+          }, 2000);
+        }
+      }, 100);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       init();
       searchInput.addEventListener("input", applyFilter);
+      
+      document.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+          e.preventDefault();
+          searchInput.focus();
+          searchInput.select();
+        }
+      });
       
       document.querySelectorAll('th.sortable').forEach(th => {
         th.addEventListener('click', () => {

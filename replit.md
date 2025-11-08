@@ -21,7 +21,9 @@ A static web application that merges and displays tracks from two Deezer playlis
   - Clickable titles that link directly to Deezer tracks (ID shown in tooltip)
   - Sortable columns: click headers to sort by title, artist, album, or playlists
   - Checkbox system to mark tracks as "processed" (state saved in localStorage)
+  - Sticky search bar with keyboard shortcut (Cmd+K on Mac, Ctrl+K on Windows)
   - Client-side search/filter across titles, artists, albums, and playlists
+  - "Voir dans la liste" button in search results to jump back to track position in full list
   - Responsive design
 
 ## Configuration
@@ -49,3 +51,6 @@ To find public playlists, visit deezer.com and get the playlist ID from the URL.
 - 2025-11-07: Added checkbox system to mark processed tracks (saved in localStorage)
 - 2025-11-07: Made titles clickable with direct links to Deezer tracks
 - 2025-11-07: Increased API timeout to 120 seconds for large playlists
+- 2025-11-08: Made search bar sticky for easier access while scrolling
+- 2025-11-08: Added keyboard shortcut (Cmd+K / Ctrl+K) to focus search bar
+- 2025-11-08: Added "Voir dans la liste" button in search results to navigate back to track position
