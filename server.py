@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+import time
+from typing import Dict, Tuple
+
 from flask import Flask, send_from_directory, request, Response
 from flask_cors import CORS
 import requests
@@ -9,6 +12,13 @@ CORS(app)
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 DEEZER_API_BASE = "https://api.deezer.com"
+CACHE_TTL_SECONDS = 120
+_cache: Dict[Tuple[str, Tuple[Tuple[str, str], ...]], Dict[str, object]] = {}
+_session = requests.Session()
+
+
+def _cache_key(endpoint: str, params: Dict[str, str]) -> Tuple[str, Tuple[Tuple[str, str], ...]]:
+    return (endpoint, tuple(sorted(params.items())))
 
 @app.route('/')
 def index():
@@ -22,14 +32,28 @@ def index():
 def proxy_deezer(endpoint):
     try:
         url = f"{DEEZER_API_BASE}/{endpoint}"
-        params = request.args.to_dict()
-        
-        response = requests.get(url, params=params, timeout=120)
-        
+        params = request.args.to_dict(flat=True)
+        key = _cache_key(endpoint, params)
+        now = time.time()
+
+        cached = _cache.get(key)
+        if cached and now - cached["ts"] < CACHE_TTL_SECONDS:
+            headers = {'Content-Type': 'application/json', 'X-Cache': 'HIT'}
+            return Response(cached["content"], status=cached["status"], headers=headers)
+
+        response = _session.get(url, params=params, timeout=30)
+
+        payload = response.content
+        _cache[key] = {
+            "content": payload,
+            "status": response.status_code,
+            "ts": now
+        }
+
         return Response(
-            response.content,
+            payload,
             status=response.status_code,
-            headers={'Content-Type': 'application/json'}
+            headers={'Content-Type': 'application/json', 'X-Cache': 'MISS'}
         )
     except Exception as e:
         return Response(

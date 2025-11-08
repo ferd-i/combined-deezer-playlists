@@ -347,22 +347,37 @@
     let currentSort = { field: 'title', direction: 'asc' };
     let processedTracks = new Set(JSON.parse(localStorage.getItem('processedTracks') || '[]'));
 
+    const FETCH_TIMEOUT_MS = 25000;
+
     function setStatus(msg) {
       statusEl.textContent = msg || "";
     }
 
+    function fetchWithTimeout(resource, options = {}, timeout = FETCH_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeout);
+
+      return fetch(resource, { ...options, signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+    }
+
     async function fetchPlaylistWithTracks(id) {
-      const playlistRes = await fetch(`${API_BASE}/playlist/${id}`);
+      const playlistPromise = fetchWithTimeout(`${API_BASE}/playlist/${id}`);
+      const tracksPromise = fetchWithTimeout(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
+
+      const [playlistRes, tracksRes] = await Promise.all([playlistPromise, tracksPromise]);
+
       if (!playlistRes.ok) {
         throw new Error(`Erreur Deezer playlist ${id}: ${playlistRes.status}`);
       }
-      const playlist = await playlistRes.json();
-
-      const tracksRes = await fetch(`${API_BASE}/playlist/${id}/tracks?limit=10000`);
       if (!tracksRes.ok) {
         throw new Error(`Erreur Deezer tracks ${id}: ${tracksRes.status}`);
       }
-      const tracksData = await tracksRes.json();
+
+      const [playlist, tracksData] = await Promise.all([
+        playlistRes.json(),
+        tracksRes.json()
+      ]);
 
       return {
         id,
@@ -560,6 +575,7 @@
         return;
       }
 
+      const startedAt = performance.now();
       setStatus("Chargement des playlists Deezer…");
 
       try {
@@ -576,7 +592,9 @@
         allTracks = mergePlaylists(playlists);
         renderTable(allTracks);
         updateSummary(allTracks);
-        setStatus("");
+        const elapsed = ((performance.now() - startedAt) / 1000).toFixed(1);
+        setStatus(`Chargement terminé en ${elapsed}s`);
+        setTimeout(() => setStatus(""), 4000);
       } catch (err) {
         console.error(err);
         setStatus("Erreur lors du chargement des playlists. Regarde la console pour les détails.");
